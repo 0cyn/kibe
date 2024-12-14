@@ -72,48 +72,5 @@ class FluidHopperBlockEntity(block: FluidHopper, pos: BlockPos, state: BlockStat
     override fun readClientNbt(tag: NbtCompound) = readNbt(tag)
 
     private fun tick(world: ServerWorld, pos: BlockPos, state: BlockState) {
-        if (!state[HopperBlock.ENABLED]) return
-
-        if (tank.amount < tank.capacity) {
-            if (topContainerFinder == null) {
-                topContainerFinder = BlockApiCache.create(FluidStorage.SIDED, world, pos.up())
-            }
-
-            topContainerFinder?.find(Direction.DOWN)?.let { extractable ->
-                Transaction.openOuter().use { transaction ->
-                    val moved = StorageUtil.move(
-                        extractable,
-                        tank,
-                        { true },
-                        extractionBump,
-                        transaction
-                    )
-                    transaction.commit()
-                    extractionBump = min(extractionBump - moved + TRANSFER_RATE, CAPACITY)
-                }
-            }
-        }
-
-        if (!tank.isResourceBlank) {
-            val direction = state[HopperBlock.FACING]
-            if (toContainerFinder == null || direction != cachedDirection) {
-                toContainerFinder = BlockApiCache.create(FluidStorage.SIDED, world, pos.offset(direction))
-                cachedDirection = direction
-            }
-
-            toContainerFinder?.find(direction.opposite)?.let { insertable ->
-                Transaction.openOuter().use { transaction ->
-                    val moved = StorageUtil.move(
-                        tank,
-                        insertable,
-                        { true },
-                        insertionBump,
-                        transaction
-                    )
-                    transaction.commit()
-                    insertionBump = min(insertionBump - moved + TRANSFER_RATE, CAPACITY)
-                }
-            }
-        }
     }
 }
